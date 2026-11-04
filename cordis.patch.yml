@@ -1,0 +1,5 @@
+# 用量雷达（dsh-usage-radar）
+# Host 半边负责聚合 token 用量与额度并暴露只读 HTTP 快照；Client 半边绘制界面。
+- insert:
+    - id: dsh-usage-radar
+      name: dsh-usage-radar

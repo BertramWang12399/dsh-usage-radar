@@ -1,0 +1,59 @@
+{
+  "name": "dsh-usage-radar",
+  "version": "1.1.0",
+  "type": "module",
+  "description": "用量雷达：实时监测 token 与额度用量，标题栏常驻环形仪表盘 + 雷达面板（上下文占用、输入/输出/缓存明细、输出曲线、今日额度、缓存命中率）。",
+  "license": "MIT",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "locale",
+    "icon.svg",
+    "cordis.patch.yml",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "dsh-plugin",
+    "dsh",
+    "deepseek-harness",
+    "token-usage",
+    "quota",
+    "prompt-cache",
+    "cache-hit-rate",
+    "usage-monitor",
+    "dashboard"
+  ],
+  "engines": {
+    "dsh": ">=0.2.1-rc.0 <0.3.0",
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BertramWang12399/dsh-usage-radar.git"
+  },
+  "homepage": "https://github.com/BertramWang12399/dsh-usage-radar#readme",
+  "bugs": {
+    "url": "https://github.com/BertramWang12399/dsh-usage-radar/issues"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}

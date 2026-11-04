@@ -1,0 +1,7 @@
+# local tooling (MinGit copy used to build this repo)
+/.tools/
+
+node_modules/
+*.log
+.DS_Store
+Thumbs.db

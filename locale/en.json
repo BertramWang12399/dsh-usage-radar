@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Usage Radar",
+    "description": "Real-time token and quota monitor: a live ring gauge in the session header with a radar panel for context pressure, input/output/cache breakdown, output sparkline and today's budget."
+  }
+}
