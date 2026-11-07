@@ -2,6 +2,10 @@
   <img src="icon.svg" width="72" alt="Usage Radar">
 </p>
 
+<p align="center"><a href="#中文">中文</a> · <a href="#english">English</a></p>
+
+<a id="中文"></a>
+
 # 用量雷达 · Usage Radar
 
 DSH（DeepSeek Harness）Web 界面插件：实时监测 token 与额度用量，用最直观的图形呈现。
@@ -105,3 +109,117 @@ Real-time token & quota radar for the DeepSeek Harness Web UI.
 - 名字 `dsh-usage-radar` 与 npm 同名包（当前空闲）保持一致，欢迎取用、二次分发。
 
 变更记录见 [CHANGELOG.md](CHANGELOG.md)，许可证 [MIT](LICENSE)。
+
+---
+
+<a id="english"></a>
+
+# Usage Radar (English)
+
+A plugin for the DSH (DeepSeek Harness) Web UI: real-time token and quota monitoring, presented with the most intuitive visuals.
+
+<p align="center"><b>Ring gauge · Output curve · Quota countdown · Cache hit rate</b></p>
+
+## Installation
+
+This package has zero dependencies and no install scripts. Two options:
+
+1. **Local directory install** (recommended; persists for the current profile):
+
+   Clone this repository anywhere, then have the plugin manager install that directory inside DSH
+   (the Host wires it into the profile as a `link:` and hot-loads it immediately):
+
+   ```powershell
+   git clone https://github.com/BertramWang12399/dsh-usage-radar.git
+   ```
+
+   In the DSH plugin management page, select and install the directory containing `dsh-usage-radar`;
+   CLI users can also call the plugin manager's `install_bundle` with that directory as the target.
+
+## What it looks like
+
+1. **Persistent ring gauge in the session title bar** (`conversation.session.header.utilities`)
+   An 18px ring progress chart plus the context usage percentage, with colors graded by pressure
+   (blue → amber → red); while the model is generating, the ring glows and a breathing green dot
+   appears on the right.
+
+2. **Click to expand the "Radar panel"** (`shell.overlay`, the topmost full-window layer)
+   - A 116px large ring: big central percentage + absolute context usage / window limit;
+   - Four mini bar charts on the right: input / output / cache read / reasoning tokens;
+   - An area line chart: the last 48 steps of output tokens (smooth Bézier + gradient fill + highlighted last point);
+   - Today's quota progress bar (with ticks, remaining amount, and a countdown to the next-day 00:00 reset);
+   - Detail chips: turns, steps, cache hit rate, current model.
+
+   Responsiveness: adaptive polling at 450ms while generating and 1300ms when idle; numbers and rings are eased/animated.
+   Close: × / Esc / click anywhere outside the panel.
+
+## Data sources (Host side)
+
+| Value | Source |
+|---|---|
+| Context usage | `tokenMeter.measure(session).totalTokens` (2.5s cache; falls back to the latest usage on failure) |
+| Context window | `session.requestContext().contextWindow` |
+| Input / output / cache / reasoning | Accumulated and per-step samples of `assistant/message.usage` in `session/event` |
+| Streaming real-time usage | The `usage` chunk of `agent/assistant-stream` |
+| Generation status | `agent/status` (`running` / `idle`) |
+| Today's quota | Accumulated same-day usage of active sessions within the current process (seeded by replaying session logs on first read) |
+
+Billing rules: quota counts only **input + output**, excluding cache reads (`cacheReadTokens`).
+Cache hits are usually far larger than newly added tokens; counting cache reads toward quota would
+instantly max out the quota bar in any long session. Cache reads are displayed separately as
+"Cache read", together with the hit rate.
+
+All token data comes from session logs and runtime events; the plugin never fabricates estimates,
+and fields it cannot read are left blank.
+
+## Configuration (optional)
+
+Override the config line in the profile's `cordis.patch.yml`; no reinstall needed:
+
+```yaml
+- id: dsh-usage-radar
+  name: dsh-usage-radar
+  config:
+    dailyBudget: 2000000   # today's quota (input+output), default 2,000,000
+    sampleLimit: 48        # number of steps kept for the curve, 8–240
+    measureTtlMs: 2500     # cache window for re-metering context
+```
+
+## API
+
+- `GET /dsh-usage-radar/api/health` — liveness probe (`served` is the number of snapshots served; it grows while the client polls)
+- `GET /dsh-usage-radar/api/snapshot?session=<sessionId>` — JSON snapshot used to render the panel
+
+Read-only, side-effect free, and makes no model-side changes.
+
+## Known limitations
+
+- **Today's quota is an in-process statistic**: it only accumulates while the current DSH process is
+  running. After a restart it is re-seeded from the same-day logs of currently active sessions;
+  historical sessions that were never loaded are not counted.
+- Sessions not loaded in the current process can only show recorded statistics, not live context.
+- Without a `tokenMeter` assembly, context usage falls back to input+output of the most recent request.
+
+## Verification
+
+- Host: `GET /dsh-usage-radar/api/snapshot?session=…` returns real session values;
+- Client: a ring gauge appears in the title bar, panel data matches the API, and both light and dark
+  themes use only `--dsw-alias-*` tokens.
+
+## Cache hit rate (new in 1.1.0, observation only)
+
+- The panel adds a "Cache hit rate (session)" block: a small bar chart of the last 24 steps
+  (misses in amber) and the reasons for recent misses.
+- The metric matches DSH's built-in input bar: `cacheRead / (cacheRead + input + cacheWrite)`.
+- Miss attribution (classified only when the hit rate is below 60%, and **it never rewrites any request**):
+  `cold` (first request) · `model-switch` (model/provider switched) · `new-input` (≥ 4000 new input tokens in this step)
+  · `prefix-changed` (cache rebuilt after a prefix change) · `unknown`.
+- To genuinely improve the hit rate, reduce the `model-switch` and `prefix-changed` categories;
+  this plugin never interferes with request content — classification only surfaces the problem.
+
+## Ecosystem
+
+- [awesome-dsh-plugin](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin) — a DSH plugin list; submissions welcome.
+- The name `dsh-usage-radar` matches the currently free npm package of the same name; reuse and redistribution are welcome.
+
+See [CHANGELOG.md](CHANGELOG.md) for the change log, and [MIT](LICENSE) for the license.
